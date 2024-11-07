@@ -34,10 +34,16 @@ comptime {
     }
 }
 
+pub const RunMode = enum {
+    RUN,
+    TEST,
+};
+
 pub const Solution = struct {
     main_file: []const u8,
     year: usize,
     day: usize,
+    mode: RunMode = .RUN,
 };
 
 pub const logo =
@@ -89,32 +95,38 @@ pub fn build(b: *Build) !void {
 
     b.top_level_steps = .{};
 
-    const year_no: ?usize = b.option(usize, "year", "Select Yeay");
-    const day_no: ?usize = b.option(usize, "day", "Select Day");
+    const year: usize = b.option(usize, "year", "Select Yeay") orelse 0;
+    const day: usize = b.option(usize, "day", "Select Day") orelse 0;
 
-    if (year_no) |year| {
-        if (day_no) |day| {
-            const work_path = "solutions";
-            const header_step = PrintStep.create(b, logo);
+    const header_step = PrintStep.create(b, logo);
+    const work_path = "solutions";
 
-            const req_solution = get_solution(b, work_path, year, day) catch |err| {
-                print("File `{s}/{d:0>4}/{d:0>2}.zig` does not exist.\n", .{ work_path, year, day });
-                return err;
-                //std.process.exit(2);
+    const req_solution = get_solution(b, work_path, year, day) catch {
+        print("File `{s}/{d:0>4}/{d:0>2}.zig` does not exist.\n", .{ work_path, year, day });
+        std.process.exit(2);
+    };
 
-            };
+    const aoc_step = b.step("aoc", b.fmt("Running the solution for {d:0>4}-{d:0>2}", .{ year, day }));
+    b.default_step = aoc_step;
+    aoc_step.dependOn(&header_step.step);
 
-            const aoc_step = b.step("aoc", b.fmt("Running the solution for {d:0>4}-{d:0>2}", .{ year, day }));
-            b.default_step = aoc_step;
-            aoc_step.dependOn(&header_step.step);
+    const verify_step = AoCStep.create(b, req_solution, work_path);
+    verify_step.step.dependOn(&header_step.step);
 
-            const verify_step = AoCStep.create(b, req_solution, work_path);
-            verify_step.step.dependOn(&header_step.step);
+    aoc_step.dependOn(&verify_step.step);
 
-            aoc_step.dependOn(&verify_step.step);
-            return;
-        }
-    }
+    const aoc_test_step = b.step("aoc-test", b.fmt("Testing the solution for {d:0>4}-{d:0>2}", .{ year, day }));
+    aoc_test_step.dependOn(&header_step.step);
+
+    const req_test: Solution = .{
+        .mode = .TEST,
+        .main_file = req_solution.main_file,
+        .year = req_solution.year,
+        .day = req_solution.day,
+    };
+    const verify_test_step = AoCStep.create(b, req_test, work_path);
+    verify_test_step.step.dependOn(&header_step.step);
+    aoc_test_step.dependOn(&verify_test_step.step);
 }
 
 var use_color_escapes = false;
@@ -126,7 +138,10 @@ var bold_text: []const u8 = "";
 var reset_text: []const u8 = "";
 
 fn get_solution(b: *Build, work_path: []const u8, y: usize, d: usize) !Solution {
+    if (y == 0 or d == 0) return .{ .year = 0, .day = 0, .main_file = "null" };
+
     try std.fs.cwd().access(b.fmt("{s}/{d:0>4}/{d:0>2}.zig", .{ work_path, y, d }), .{});
+
     return .{
         .year = y,
         .day = d,
@@ -185,6 +200,11 @@ const AoCStep = struct {
     fn make(step: *Step, prog_node: std.Progress.Node) !void {
         const self: *AoCStep = @alignCast(@fieldParentPtr("step", step));
 
+        if (self.solution.year == 0 or self.solution.day == 0) {
+            self.help();
+            return;
+        }
+
         const exe_path = self.compile(prog_node) catch {
             self.printErrors();
             self.help();
@@ -212,8 +232,8 @@ const AoCStep = struct {
             .allocator = b.allocator,
             .argv = &.{
                 exe_path,
-                b.fmt("{d:0>4}", .{self.solution.year}),
-                b.fmt("{d:0>2}", .{self.solution.day}),
+                if (self.solution.mode == .RUN) b.fmt("{d:0>4}", .{self.solution.year}) else "test",
+                if (self.solution.mode == .RUN) b.fmt("{d:0>2}", .{self.solution.day}) else "test",
             },
             .cwd = b.build_root.path.?,
             .cwd_dir = b.build_root.handle,
@@ -235,17 +255,21 @@ const AoCStep = struct {
                 }
             },
             else => {
-                return self.step.fail("{s} terminated unexpectedly", .{
-                    self.solution.main_file,
+                return self.step.fail("{s} terminated unexpectedly\n{s}{s}{s}\n", .{
+                    self.solution.main_file, red_text, result.stderr, reset_text,
                 });
             },
         }
 
         const raw_output = result.stderr;
+        print("--------------------------------------------------\n", .{});
         print("{s}\n", .{raw_output});
-        const file = try self.get_output_file();
-        defer file.close();
-        try file.writeAll(raw_output);
+        print("--------------------------------------------------\n", .{});
+        if (self.solution.mode == .RUN) {
+            const file = try self.get_output_file();
+            defer file.close();
+            try file.writeAll(raw_output);
+        }
     }
 
     fn get_output_file(self: *AoCStep) !std.fs.File {
@@ -301,7 +325,16 @@ const AoCStep = struct {
         const year = self.solution.year;
         const day = self.solution.day;
 
-        const cmd = b.fmt("zig build -Dyear={d} -Dday={d}", .{ year, day });
+        if (year == 0 or day == 0) {
+            print(
+                \\To run a solution of year `y`, day `d` run the following command:
+                \\zig build aoc{s} -Dyear=y -Dday=d
+                \\With the code and input present.
+                \\
+            , .{if (self.solution.mode == .TEST) "-test" else ""});
+            return;
+        }
+        const cmd = b.fmt("zig build aoc{s} -Dyear={d} -Dday={d}", .{ if (self.solution.mode == .TEST) "-test" else "", year, day });
 
         print("\n{s}Update solutions/{s} and run '{s}' again.{s}\n", .{
             red_bold_text, path, cmd, reset_text,

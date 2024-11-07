@@ -33,8 +33,13 @@ Root
 
 ## Instructions to Run
 
-To run the solution of a certain year's certain day, use the following command and replace the year and day accordingly and make sure that the solution exists and the input file is also present.
+- To run the solution of a certain year's certain day, use the following command and replace the year and day accordingly and make sure that the solution exists and the input file is also present.
 
-```bash
-zig build -Dyear=<year> -Dday=<day>
-```
+    ```bash
+    zig build aoc -Dyear=**<year>** -Dday=**<day>**
+    ```
+
+- To run a test input against the same solution, make sure that you have the test input in the `inputs/test/test.txt` file and execute the following command.
+    ```bash
+    zig build aoc-test -Dyear=**<year>** -Dday=**<day>**
+    ```

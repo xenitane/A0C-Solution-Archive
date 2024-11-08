@@ -299,7 +299,7 @@ const AoCStep = struct {
     }
 
     fn compile(self: *AoCStep, prog_node: std.Progress.Node) !?[]const u8 {
-        print("Compiling {s}/{s}\n", .{ self.work_path, self.solution.main_file });
+        print("Compiling: {s}/{s}\n", .{ self.work_path, self.solution.main_file });
 
         const b = self.step.owner;
         const solution_path = self.solution.main_file;

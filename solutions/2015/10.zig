@@ -17,8 +17,6 @@ fn get_input(allocator: std.mem.Allocator) ![]const u8 {
     return buffer;
 }
 
-const Block = struct { len: usize = 0, chr: u8 };
-
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const gpa_allocator = gpa.allocator();
@@ -42,18 +40,18 @@ pub fn main() !void {
 
     for (0..(n - 1)) |i| rslt_buf[i] = input[i];
 
-    try wtf(rslt_buf, temp_buf, &n, 40);
+    try update_rle(rslt_buf, temp_buf, &n, 40);
 
     res_1 = n - 1;
 
-    try wtf(rslt_buf, temp_buf, &n, 10);
+    try update_rle(rslt_buf, temp_buf, &n, 10);
 
     res_2 = n - 1;
 
     print("part 1: {d}\npart 2: {d}", .{ res_1, res_2 });
 }
 
-fn wtf(rslt_buf: []u8, temp_buf: []u8, n: *usize, q: usize) !void {
+fn update_rle(rslt_buf: []u8, temp_buf: []u8, n: *usize, q: usize) !void {
     for (0..q) |_| {
         var last: u8 = rslt_buf[0];
         var len: usize = 0;

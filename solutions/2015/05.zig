@@ -12,86 +12,76 @@ fn get_input(allocator: std.mem.Allocator) ![]const u8 {
     const file_size = (try input_file.stat()).size;
     const buffer = try allocator.alloc(u8, file_size);
     try input_file.reader().readNoEof(buffer);
-    return buffer[0..file_size];
+    return buffer;
 }
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    const gpa_allocator = gpa.allocator();
-    defer _ = gpa.deinit();
-    const input = try get_input(gpa_allocator);
-    defer gpa_allocator.free(input);
+    var GPA = std.heap.GeneralPurposeAllocator(.{}){};
+    const gpa = GPA.allocator();
+    defer _ = GPA.deinit();
+    const input = try get_input(gpa);
+    defer gpa.free(input);
+    solve(input);
+}
 
+fn solve(input: []const u8) void {
     var res_1: u64 = 0;
     var res_2: u64 = 0;
 
-    res_2 = 0;
+    var idx: usize = 0;
+    while (idx < input.len) : (idx += 1) {
+        var last: u8 = 0;
+        var second_last: u8 = 0;
 
-    var p0: u8 = 0;
-    var p1: u8 = 0;
+        var vowel_count: usize = 0;
+        var pair: bool = false;
+        var no_invalid_pairs: bool = true;
 
-    var vowel_count: usize = 0;
-    var same_pair: bool = false;
-    var all_valid_pair: bool = true;
+        var xyx: bool = false;
+        var pair_frq: [676]bool = [_]bool{false} ** 676;
+        var non_overlaping_repeating_pair: bool = false;
+        var last_pair: i16 = -1;
 
-    var xyx: bool = false;
-    var last_pair: u16 = 0;
-    var pair_frq: [676]usize = undefined;
-    for (0..676) |i| pair_frq[i] = 0;
+        while (input[idx] != '\n') : (idx += 1) {
+            vowel_count += switch (input[idx]) {
+                'a', 'e', 'i', 'o', 'u' => 1,
+                else => 0,
+            };
 
-    for (input) |chr| {
-        switch (chr) {
-            '\n' => {
-                if (vowel_count > 2 and same_pair and all_valid_pair) res_1 += 1;
-                if (xyx and any_gt(&pair_frq, 1)) {
-                    res_2 += 1;
+            if (last == input[idx]) pair = true;
+
+            if (last == 'a' and input[idx] == 'b') {
+                no_invalid_pairs = false;
+            } else if (last == 'c' and input[idx] == 'd') {
+                no_invalid_pairs = false;
+            } else if (last == 'p' and input[idx] == 'q') {
+                no_invalid_pairs = false;
+            } else if (last == 'x' and input[idx] == 'y') {
+                no_invalid_pairs = false;
+            }
+
+            if (second_last == input[idx]) xyx = true;
+
+            if (!non_overlaping_repeating_pair and last > 0) {
+                var cur_pair: i16 = last - 'a';
+                cur_pair *= 26;
+                cur_pair += input[idx] - 'a';
+                if (last_pair != cur_pair) {
+                    const jdx: u16 = @bitCast(cur_pair);
+                    if (pair_frq[jdx]) non_overlaping_repeating_pair = true;
+                    pair_frq[jdx] = true;
+                    last_pair = cur_pair;
+                } else {
+                    last_pair = -1;
                 }
-                p0 = 0;
-                p1 = 0;
-                vowel_count = 0;
-                same_pair = false;
-                all_valid_pair = true;
+            }
 
-                xyx = false;
-                last_pair = 0;
-                for (0..676) |i| pair_frq[i] = 0;
-            },
-            else => {
-                switch (chr) {
-                    'a', 'e', 'i', 'o', 'u' => {
-                        vowel_count += 1;
-                    },
-                    else => {},
-                }
-                if (p0 == chr) same_pair = true;
-                if ((p0 == 'a' and chr == 'b') or (p0 == 'c' and chr == 'd') or (p0 == 'p' and chr == 'q') or (p0 == 'x' and chr == 'y')) {
-                    all_valid_pair = false;
-                }
-
-                if (p0 > 0) {
-                    var cur_pr: u16 = 0;
-                    cur_pr += p0 - 'a';
-                    cur_pr *= 26;
-                    cur_pr += chr - 'a';
-                    if (last_pair != cur_pr) {
-                        pair_frq[cur_pr] += 1;
-                        last_pair = cur_pr;
-                    } else {
-                        last_pair = 0;
-                    }
-                }
-                if (p1 == chr) xyx = true;
-
-                p1 = p0;
-                p0 = chr;
-            },
+            second_last = last;
+            last = input[idx];
         }
+        if (vowel_count > 2 and pair and no_invalid_pairs) res_1 += 1;
+        if (xyx and non_overlaping_repeating_pair) res_2 += 1;
     }
 
     print("part 1: {d}\npart 2: {d}", .{ res_1, res_2 });
-}
-
-fn any_gt(arr: *[676]usize, el: usize) bool {
-    for (0..arr.len) |i| if (arr[i] > el) return true;
-    return false;
 }

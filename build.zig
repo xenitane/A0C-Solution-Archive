@@ -62,6 +62,41 @@ pub const logo =
     \\
 ;
 
+pub const logos = [_][]const u8{
+    \\
+    \\                         *
+    \\                        >o<
+    \\                       >>O<<
+    \\                      >>O<<<<
+    \\                     >@>O<<o<<
+    \\                    >o<<<O<<<@<
+    \\                   >o>>o<*<<o<<<
+    \\                  >>O<<@>>>O<*<o<
+    \\                 >O>>o<<O>>>*>>o<<
+    \\                >>o<<@<<o>>@>>O>O<<
+    \\               >>@<<<O<<<O<*>>O<<o<<
+    \\              >o>o<o>>>o<<<O>>@>*<<<<
+    \\             >@>@<<<o<<O<<O>>>@>>>*<<<
+    \\            >O>>O<<@>>O<<@>>>@>o<O<<<*<
+    \\           >O<o<<<*>>>@>>O>>>*>*>>>*<<<<
+    \\          >>*>>*<<O<<*>>@<<<*<<<@<O<o<<@<
+    \\         >>*<<<O>>*<<<*>o<*<<<*>>*<<<*<<O<
+    \\        >>o>>>*<<o<<*<<O<<<@>>o>>*<@>>>o>@<
+    \\       >O<o<<<o<O<<<o<<<o<<*<o<<o>>>*<@<<O<<
+    \\      >o>O<*<<O<O<<@>>@>o>>>*>>*<<@>>*<<<@<<<
+    \\     >o>>>O<<O<O>O>>>o>>>@<<<O<<<o>>>*<o<<O>o<
+    \\    >>O>>@<<<o>>*>>*>>o<O>>>o<<<*>o>>>*>>@<*<<<
+    \\   >>*<<<*<<o>o<<o<<<o>>>@>@>>@<@<o<O<<o>@<<@<<<
+    \\  >>O<@>>@>>>O<<@<O<<<@<<<@>>@<*>>o<<<O<<<*>O>*<<
+    \\ >o>@<<@<<O<<o>>>o<<O>>@>>@<<@<<*>>*>>o<O>>O>*<<@<
+    \\                       |   |
+    \\                       |   |
+    \\            _  _ __ ___|___|___ __ _  _
+    \\
+    \\
+    ,
+};
+
 pub fn build(b: *Build) !void {
     use_color_escapes = false;
     if (std.io.getStdErr().supportsAnsiEscapeCodes()) {
@@ -98,7 +133,9 @@ pub fn build(b: *Build) !void {
     const year: usize = b.option(usize, "year", "Select Yeay") orelse 0;
     const day: usize = b.option(usize, "day", "Select Day") orelse 0;
 
-    const header_step = PrintStep.create(b, logo);
+    const req_logo = if (year == 0 or day == 0) logo else logos[year - 2015];
+
+    const header_step = PrintStep.create(b, req_logo);
     const work_path = "solutions";
 
     const req_solution = get_solution(b, work_path, year, day) catch {

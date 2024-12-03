@@ -1,4 +1,4 @@
-# AoC Solution Archive in Zig
+# aoc.zig
 
 ## Requirements
 

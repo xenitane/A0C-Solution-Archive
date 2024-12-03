@@ -71,19 +71,19 @@ fn make_dp(dp: [][EGGNOG_QTY + 1]Aaaaa, containers: std.ArrayList(u8), idx: usiz
     var jj: usize = 0;
 
     while (ii < len0 and jj < len1) {
-        const aa = dp[idx + 1][en].items[ii];
-        const bb = dp[idx + 1][en + containers.items[idx]].items[jj];
-        switch (order(aa[0], bb[0] + 1)) {
+        const combinations_without_this_container = dp[idx + 1][en].items[ii];
+        const possibilities_with_this_container = dp[idx + 1][en + containers.items[idx]].items[jj];
+        switch (order(combinations_without_this_container[0], possibilities_with_this_container[0] + 1)) {
             .lt => {
-                try dp[idx][en].append(aa);
+                try dp[idx][en].append(combinations_without_this_container);
                 ii += 1;
             },
             .gt => {
-                try dp[idx][en].append(.{ bb[0] + 1, bb[1] });
+                try dp[idx][en].append(.{ possibilities_with_this_container[0] + 1, possibilities_with_this_container[1] });
                 jj += 1;
             },
             .eq => {
-                try dp[idx][en].append(.{ aa[0], aa[1] + bb[1] });
+                try dp[idx][en].append(.{ combinations_without_this_container[0], combinations_without_this_container[1] + possibilities_with_this_container[1] });
                 ii += 1;
                 jj += 1;
             },
@@ -91,8 +91,8 @@ fn make_dp(dp: [][EGGNOG_QTY + 1]Aaaaa, containers: std.ArrayList(u8), idx: usiz
     }
     while (ii < len0) : (ii += 1) try dp[idx][en].append(dp[idx + 1][en].items[ii]);
     while (jj < len1) : (jj += 1) {
-        const aa = dp[idx + 1][en + containers.items[idx]].items[jj];
-        try dp[idx][en].append(.{ aa[0] + 1, aa[1] });
+        const possibilities_with_this_container = dp[idx + 1][en + containers.items[idx]].items[jj];
+        try dp[idx][en].append(.{ possibilities_with_this_container[0] + 1, possibilities_with_this_container[1] });
     }
 
     return dp[idx][en].items.len != 0;

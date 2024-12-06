@@ -48,19 +48,6 @@ pub const Solution = struct {
 
 pub const logo = @embedFile("./logos/0000.txt");
 
-pub const logos = [_][]const u8{
-    @embedFile("./logos/2015.txt"),
-    @embedFile("./logos/2016.txt"),
-    @embedFile("./logos/2017.txt"),
-    @embedFile("./logos/2018.txt"),
-    @embedFile("./logos/2019.txt"),
-    @embedFile("./logos/2020.txt"),
-    @embedFile("./logos/2021.txt"),
-    @embedFile("./logos/2022.txt"),
-    @embedFile("./logos/2023.txt"),
-    @embedFile("./logos/2024.txt"),
-};
-
 pub fn build(b: *Build) !void {
     use_color_escapes = false;
     if (std.io.getStdErr().supportsAnsiEscapeCodes()) {
@@ -97,7 +84,7 @@ pub fn build(b: *Build) !void {
     const year: usize = b.option(usize, "year", "Select Yeay") orelse 0;
     const day: usize = b.option(usize, "day", "Select Day") orelse 0;
 
-    const req_logo = if (year == 0 or day == 0) logo else logos[year - 2015];
+    const req_logo = logo;
 
     const header_step = PrintStep.create(b, req_logo);
     const work_path = "solutions";

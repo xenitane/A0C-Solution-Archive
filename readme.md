@@ -12,6 +12,8 @@ Root
 |- .
 |- ..
 |- inputs
+|- |- test
+|  |  |- test.txt
 |  |- year
 |  |  |- 01.txt
 |  |  |- ...
@@ -25,11 +27,14 @@ Root
 |  |- ...
 |- build.zig
 |- build.zig.zon
+|- readme.md
+|- template.zig
 ```
 
 > Points to Remember:
-> The inputs must be provided by the user in the required format.
-> The year in the directory structure are the years 2015 to now.
+> The inputs must be provided by the user via the approprite file.
+> The year in the directory structure are from 2015 and forward along with a test file in the inputs directory for testing purposes.
+> There is a template file for the solutions which takes care of the file input in the root of the directory.
 
 ## Instructions to Run
 
